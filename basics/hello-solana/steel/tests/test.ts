@@ -12,11 +12,15 @@ describe('hello-solana', async () => {
 
   test('Say hello!', async () => {
     const blockhash = context.lastBlockhash;
+
+    // pass in our name as the instruction data.
+    let name = "The Wuh"
+
     // We set up our instruction first.
     const ix = new TransactionInstruction({
-      keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }],
-      programId: PROGRAM_ID,
-      data: Buffer.alloc(0), // No data
+      keys: [{ pubkey: payer.publicKey, isSigner: true, isWritable: true }], // Accounts we are passing in
+      programId: PROGRAM_ID,  // Our Program ID
+      data: Buffer.from(name), // takes in a buffer
     });
 
     const tx = new Transaction();
@@ -26,11 +30,13 @@ describe('hello-solana', async () => {
     // Now we process the transaction
     const transaction = await client.processTransaction(tx);
 
+    const logCount = transaction.logMessages.length
+
     assert(transaction.logMessages[0].startsWith(`Program ${PROGRAM_ID}`));
-    assert(transaction.logMessages[1] === 'Program log: Hello, Solana!');
+    assert(transaction.logMessages[1] === `Program log: Hello, ${name}!`);
     assert(transaction.logMessages[2] === `Program log: Our program's Program ID: ${PROGRAM_ID}`);
-    assert(transaction.logMessages[3].startsWith(`Program ${PROGRAM_ID} consumed`));
-    assert(transaction.logMessages[4] === `Program ${PROGRAM_ID} success`);
-    assert(transaction.logMessages.length === 5);
+    assert(transaction.logMessages[3] === `Program log: We have ${ix.keys.length} accounts`);
+    assert(transaction.logMessages[logCount - 2].startsWith(`Program ${PROGRAM_ID} consumed`));
+    assert(transaction.logMessages[logCount - 1] === `Program ${PROGRAM_ID} success`);
   });
 });
